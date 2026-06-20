@@ -64,6 +64,9 @@ model and contribution guidance.
 - Side-by-side desktop/mobile view.
 - Shareable config via URL hash (no storage).
 
+See `ROADMAP.md` for bigger, more speculative ideas (LLM-assisted prompt generation,
+curated theme categories with style guidelines, a Canva-style drag/compose editor).
+
 ## Contributing
 PRs welcome — see `CONTRIBUTING.md` for the hard constraints, QA checklist, and PR process.
 Keep it dependency-free and single-file unless there's a strong reason not to. Read

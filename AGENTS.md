@@ -61,6 +61,11 @@ There is no test suite. Manual QA checklist for any UI change:
 - Identity/theme tokens (`--bg`, `--ink`, `--accent`, `--line`) are the clean-tech default;
   keep them as variables so theming stays trivial.
 
+## Bigger ideas
+See `ROADMAP.md` for larger, more speculative bets (LLM-assisted prompt generation, curated
+theme categories, a Canva-style drag/compose editor) — some would need an explicit decision
+to relax the no-dependency / no-network constraints below. Discuss in an issue first.
+
 ## Good first tasks
 - Theme presets (clean-tech / dark-premium / fintech) via swapping the `:root` token block.
 - Custom palette + background-color picker.
