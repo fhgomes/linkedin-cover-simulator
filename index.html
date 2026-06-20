@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LinkedIn Cover Simulator — 1584×396</title>
+<meta name="description" content="Preview a LinkedIn personal cover at the exact 1584×396 spec — see the profile-photo safe zone and the mobile crop before you export." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ----------------------------------------------------------------------
+     GEOMETRY — single source of truth.
+     All zones are expressed as % of the 1584×396 canvas so the stage scales
+     responsively while keeping LinkedIn-accurate proportions.
+     Verify these against current LinkedIn specs before changing them.
+       canvas            1584 × 396 px (4:1)
+       safe zone         ~1150 × 260 px, centered           -> see --safe-*
+       keep-clear (photo) bottom-left ~568 × 264 px          -> see --clear-*
+       mobile crop        ~192 px trimmed each side          -> see --crop-side
+       80px grid          80/1584 = 5.05% , 80/396 = 20.2%
+  ---------------------------------------------------------------------- */
+  :root{
+    /* identity / theme tokens (clean-tech default) */
+    --bg:#FCFCFC; --ink:#0F172A; --accent:#2563EB; --line:#E2E8F0; --grey:#64748B;
+    --danger:#ef4444; --danger-ink:#b91c1c;
+
+    /* geometry tokens */
+    --safe-left:13.7%; --safe-top:17.2%; --safe-w:72.6%; --safe-h:65.7%;
+    --clear-w:35.9%; --clear-h:66.7%;
+    --crop-side:12.12%;
+    --avatar-w:15%; --avatar-left:3%; --avatar-bottom:-9%;
+    --grid-x:5.05%; --grid-y:20.2%;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:#F1F5F9; color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif; padding:24px; line-height:1.5;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:var(--grey);font-size:13px;margin:0 0 20px;font-family:'JetBrains Mono',monospace}
+  .controls{
+    display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;
+    background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:18px;
+  }
+  .controls label{font-size:12px;color:var(--grey);display:flex;flex-direction:column;gap:4px}
+  .controls input[type=text]{
+    font-family:'Inter',sans-serif;font-size:13px;padding:6px 8px;border:1px solid var(--line);
+    border-radius:6px;min-width:230px;color:var(--ink)
+  }
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .seg button{border:0;background:#fff;padding:7px 14px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;color:var(--grey)}
+  .seg button.on{background:var(--accent);color:#fff}
+  .toggle{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink);cursor:pointer}
+  .btn{
+    border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 12px;font-size:13px;
+    cursor:pointer;font-family:'Inter',sans-serif;color:var(--ink)
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent)}
+
+  /* The 1584x396 stage, scaled responsively */
+  .stage-shell{position:relative;width:100%;border-radius:12px;overflow:hidden;
+    box-shadow:0 1px 0 var(--line),0 8px 30px rgba(15,23,42,.08)}
+  .stage{position:relative;width:100%;aspect-ratio:1584/396;background:var(--bg);overflow:hidden}
+
+  .grid{position:absolute;inset:0;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:var(--grid-x) var(--grid-y);
+    opacity:.5}
+  .motif{position:absolute;right:18%;top:30%;width:34%;height:46%;opacity:.12;color:var(--accent)}
+  #coverImg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+
+  /* copy block (center-right) */
+  .copy{position:absolute;left:42%;top:30%;width:50%;color:var(--ink);pointer-events:none}
+  .copy .h{font-weight:700;font-size:2.6vw;line-height:1.1;letter-spacing:-.01em}
+  .copy .s{font-family:'JetBrains Mono',monospace;font-size:1.15vw;color:var(--accent);margin-top:1.2vw}
+  .copy.darktext .h{color:#fff}
+  .copy.darktext .s{color:#7DD3FC}
+
+  /* safe zone guide */
+  .safe{position:absolute;left:var(--safe-left);top:var(--safe-top);width:var(--safe-w);height:var(--safe-h);
+    border:1.5px dashed var(--accent);border-radius:6px;pointer-events:none}
+  .safe::after{content:"SAFE ZONE";position:absolute;top:4px;left:8px;font-size:10px;
+    font-family:'JetBrains Mono',monospace;color:var(--accent);letter-spacing:.08em}
+
+  /* keep-clear bottom-left */
+  .clear{position:absolute;left:0;bottom:0;width:var(--clear-w);height:var(--clear-h);
+    background:repeating-linear-gradient(45deg,rgba(239,68,68,.06),rgba(239,68,68,.06) 8px,rgba(239,68,68,.12) 8px,rgba(239,68,68,.12) 16px);
+    pointer-events:none}
+  .clear::after{content:"profile photo covers — keep clear";position:absolute;bottom:6px;left:8px;
+    font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--danger-ink)}
+
+  /* profile photo circle */
+  .avatar{position:absolute;left:var(--avatar-left);bottom:var(--avatar-bottom);width:var(--avatar-w);aspect-ratio:1;
+    border-radius:50%;background:var(--ink);border:4px solid #fff;box-shadow:0 4px 14px rgba(15,23,42,.3);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1vw;
+    font-family:'JetBrains Mono',monospace;overflow:hidden}
+  .avatar.light{background:#E2E8F0;color:var(--grey)}
+  .avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+
+  /* mobile crop shades */
+  .cropL,.cropR{position:absolute;top:0;height:100%;width:var(--crop-side);background:rgba(15,23,42,.55);
+    display:none;align-items:center;justify-content:center}
+  .cropL{left:0}.cropR{right:0}
+  .stage.mobile .cropL,.stage.mobile .cropR{display:flex}
+  .cropL span,.cropR span{writing-mode:vertical-rl;color:#fff;font-size:10px;font-family:'JetBrains Mono',monospace;letter-spacing:.1em}
+
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:14px;font-size:12px;color:var(--grey)}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .note{margin-top:16px;font-size:13px;color:var(--grey);background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:12px 14px}
+  .hide{display:none !important}
+  code{font-family:'JetBrains Mono',monospace;color:var(--accent)}
+  footer{margin-top:18px;font-size:12px;color:var(--grey)}
+  footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>LinkedIn Cover Simulator</h1>
+  <p class="sub">canvas 1584 × 396 px · 4:1 · see where the profile photo hides your text and what mobile crops</p>
+
+  <div class="controls">
+    <label>Headline
+      <input id="hl" type="text" value="Reliable distributed systems" />
+    </label>
+    <label>Sub-line (mono)
+      <input id="sl" type="text" value="Java · Spring · Cloud · FinTech" />
+    </label>
+    <div class="seg" id="device">
+      <button data-d="desktop" class="on">Desktop</button>
+      <button data-d="mobile">Mobile</button>
+    </div>
+    <button class="btn" id="upBtn">Upload cover (PNG/JPG)</button>
+    <input id="file" type="file" accept="image/*" class="hide" />
+    <label class="toggle"><input type="checkbox" id="guides" checked /> Guides</label>
+    <label class="toggle"><input type="checkbox" id="darkAvatar" /> Dark photo</label>
+    <label class="toggle"><input type="checkbox" id="darkText" /> Light text</label>
+    <button class="btn" id="clearImg">Clear cover</button>
+  </div>
+
+  <div class="stage-shell">
+    <div class="stage" id="stage">
+      <div class="grid" id="grid"></div>
+      <svg class="motif" id="motif" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <rect x="6" y="20" width="40" height="22" rx="3"/><rect x="80" y="8" width="40" height="22" rx="3"/>
+        <rect x="80" y="52" width="40" height="22" rx="3"/><rect x="154" y="30" width="40" height="22" rx="3"/>
+        <path d="M46 31 H80 M120 19 H154 M120 63 H154 M174 52 V86 H46 V42"/>
+        <circle cx="174" cy="96" r="6"/>
+      </svg>
+      <img id="coverImg" alt="Uploaded cover preview" />
+      <div class="copy" id="copy">
+        <div class="h" id="hOut">Reliable distributed systems</div>
+        <div class="s" id="sOut">Java · Spring · Cloud · FinTech</div>
+      </div>
+      <div class="safe guide" id="safe"></div>
+      <div class="clear guide" id="clear"></div>
+      <div class="cropL"><span>cropped on mobile</span></div>
+      <div class="cropR"><span>cropped on mobile</span></div>
+      <div class="avatar" id="avatar">you</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:#2563EB"></i>Safe zone — place text here</span>
+    <span><i style="background:#ef4444"></i>Bottom-left — profile photo covers this</span>
+    <span><i style="background:rgba(15,23,42,.55)"></i>Edges cropped on mobile</span>
+  </div>
+
+  <div class="note">
+    How to use: type your headline / sub-line, generate the cover in your image AI at
+    <code>1584×396</code>, click <b>Upload cover</b> to preview it in place, and toggle
+    <b>Desktop / Mobile</b>. If anything important falls in the red zone or the shaded mobile
+    bands, move it toward the center-right. Rule of thumb: keep text ≥300px from the left,
+    ≥150px from the right, and away from the top/bottom edges.
+  </div>
+
+  <footer>
+    Part of a LinkedIn / CV prompt suite · MIT licensed · text and images stay in your browser (nothing is uploaded).<br>
+    Created by <a href="https://github.com/fhgomes" target="_blank" rel="noopener">Fernando Gomes</a> ·
+    <a href="https://www.youtube.com/@fhgomestech" target="_blank" rel="noopener">YouTube</a> ·
+    <a href="https://www.instagram.com/fhgomes.tech/" target="_blank" rel="noopener">Instagram</a> ·
+    <a href="https://www.linkedin.com/in/fhgomes" target="_blank" rel="noopener">LinkedIn</a> ·
+    <a href="https://blog.fhgomes.com/" target="_blank" rel="noopener">Blog</a> ·
+    <a href="mailto:tech.fernando.gomes@gmail.com">Email</a>
+  </footer>
+</div>
+
+<script>
+  const $ = s => document.querySelector(s);
+  const stage = $('#stage');
+
+  // live text binding
+  const hl = $('#hl'), sl = $('#sl'), hOut = $('#hOut'), sOut = $('#sOut');
+  hl.addEventListener('input', () => hOut.textContent = hl.value);
+  sl.addEventListener('input', () => sOut.textContent = sl.value);
+
+  // desktop / mobile toggle
+  $('#device').addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    stage.classList.toggle('mobile', b.dataset.d === 'mobile');
+  });
+
+  // guides on/off
+  $('#guides').addEventListener('change', e => {
+    document.querySelectorAll('.guide').forEach(g => g.classList.toggle('hide', !e.target.checked));
+  });
+
+  // profile-photo tone (for color-harmony testing)
+  $('#avatar').classList.add('light'); // default: light avatar
+  $('#darkAvatar').addEventListener('change', e => {
+    $('#avatar').classList.toggle('light', !e.target.checked);
+  });
+
+  // text tone (for dark backgrounds)
+  $('#darkText').addEventListener('change', e => {
+    $('#copy').classList.toggle('darktext', e.target.checked);
+  });
+
+  // upload + preview (in-memory only; no storage, no network)
+  const fileInput = $('#file'), coverImg = $('#coverImg');
+  $('#upBtn').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', e => {
+    const f = e.target.files[0]; if(!f) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      coverImg.src = ev.target.result;
+      coverImg.style.display = 'block';
+      $('#grid').style.display = 'none';
+      $('#motif').style.display = 'none';
+    };
+    r.readAsDataURL(f);
+  });
+  $('#clearImg').addEventListener('click', () => {
+    coverImg.src=''; coverImg.style.display='none';
+    $('#grid').style.display=''; $('#motif').style.display='';
+    fileInput.value='';
+  });
+</script>
+</body>
+</html>
