@@ -24,6 +24,8 @@ in seconds.
 - **Upload** your generated cover (PNG/JPG) and preview it in place.
 - Live **headline / sub-line** fields, plus toggles for dark photo / light text to test
   color harmony.
+- **"Image already has text"** toggle to hide the headline/sub-line overlay when your
+  uploaded cover already has text baked in.
 
 ## Run it
 Just open `index.html` in any modern browser. To serve locally:

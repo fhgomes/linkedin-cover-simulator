@@ -137,6 +137,7 @@
     <label class="toggle"><input type="checkbox" id="guides" checked /> Guides</label>
     <label class="toggle"><input type="checkbox" id="darkAvatar" /> Dark photo</label>
     <label class="toggle"><input type="checkbox" id="darkText" /> Light text</label>
+    <label class="toggle"><input type="checkbox" id="imgHasText" /> Image already has text</label>
     <button class="btn" id="clearImg">Clear cover</button>
   </div>
 
@@ -173,7 +174,9 @@
     <code>1584×396</code>, click <b>Upload cover</b> to preview it in place, and toggle
     <b>Desktop / Mobile</b>. If anything important falls in the red zone or the shaded mobile
     bands, move it toward the center-right. Rule of thumb: keep text ≥300px from the left,
-    ≥150px from the right, and away from the top/bottom edges.
+    ≥150px from the right, and away from the top/bottom edges. If your uploaded image
+    already has text baked in, check <b>Image already has text</b> to hide the headline /
+    sub-line overlay — it's only simulator UI, not part of the exported file.
   </div>
 
   <footer>
@@ -220,6 +223,11 @@
   // text tone (for dark backgrounds)
   $('#darkText').addEventListener('change', e => {
     $('#copy').classList.toggle('darktext', e.target.checked);
+  });
+
+  // uploaded image already has text baked in -> hide the headline/sub-line overlay
+  $('#imgHasText').addEventListener('change', e => {
+    $('#copy').classList.toggle('hide', e.target.checked);
   });
 
   // upload + preview (in-memory only; no storage, no network)

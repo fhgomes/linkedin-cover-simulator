@@ -50,7 +50,8 @@ There is no test suite. Manual QA checklist for any UI change:
 3. Guides toggle hides/shows safe + keep-clear overlays.
 4. Upload renders an image with `object-fit: cover`; Clear restores the grid + motif.
 5. Headline/sub-line edits update live; dark-photo and light-text toggles work.
-6. No console errors; no network requests beyond the font CSS.
+6. "Image already has text" toggle hides the headline/sub-line overlay.
+7. No console errors; no network requests beyond the font CSS.
 
 ## Conventions
 - Vanilla JS, `const`/`let`, small `$()` helper. No frameworks, no new deps without a strong

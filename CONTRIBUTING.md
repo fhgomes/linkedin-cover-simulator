@@ -49,7 +49,8 @@ Manual QA checklist (from `AGENTS.md`) — run through this for any UI change:
 3. Guides toggle hides/shows the safe-zone and keep-clear overlays.
 4. Upload renders an image with `object-fit: cover`; Clear restores the grid + motif.
 5. Headline/sub-line edits update live; dark-photo and light-text toggles work.
-6. No console errors; no network requests beyond the font CSS (check devtools Network tab).
+6. "Image already has text" toggle hides the headline/sub-line overlay.
+7. No console errors; no network requests beyond the font CSS (check devtools Network tab).
 
 ## Submitting a PR
 - Keep PRs small and focused — one change per PR.
